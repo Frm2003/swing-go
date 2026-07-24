@@ -8,9 +8,9 @@ import (
 func main() {
 	runtime := wayland.NewRuntime()
 
-	application.New(runtime)
+	app := application.New(runtime)
 
-	// window := app.NewWindow()
+	app.NewWindow()
 	// window.SetTitle("Nova janela")
 	// window.Show()
 

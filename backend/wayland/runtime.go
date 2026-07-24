@@ -72,8 +72,13 @@ func (r *Runtime) Run() error {
 	return nil
 }
 
-func (r *Runtime) CreateDriver() application.WindowDriver {
-	return nil
+func (r *Runtime) NewWindow() (application.WindowDriver, error) {
+	wlSurface := createProxy(r, proxies.NewWlSurface)
+	if err := r.wlCompositor.CreateSurface(wlSurface.GetId()); err != nil {
+		return nil, err
+	}
+
+	return &Window{}, nil
 }
 
 func createProxy[T Proxy](r *Runtime, f Factory[T]) T {

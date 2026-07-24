@@ -11,13 +11,16 @@ func New(runtime Runtime) *App {
 	}
 
 	return &App{
+		runtime: runtime,
 		windows: make([]Window, 0),
 	}
 }
 
 func (a *App) NewWindow() *Window {
-	window := NewWindow()
-	a.windows = append(a.windows, *window)
+	driver, _ := a.runtime.NewWindow()
+
+	window := NewWindow(driver)
+
 	return window
 }
 

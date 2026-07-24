@@ -1,6 +1,14 @@
 package proxies
 
-import "swing-go/backend/wayland/protocol"
+import (
+	"swing-go/backend/wayland/protocol"
+	"swing-go/backend/wayland/proxies/request"
+)
+
+const (
+	wlCompositorCreateSurface uint16 = iota
+	wlCompositorCreateRegion
+)
 
 type WlCompositor struct {
 	objectId uint32
@@ -27,4 +35,14 @@ func (wl *WlCompositor) GetInterfaceName() string {
 
 func (wl *WlCompositor) SetSender(send func(*protocol.Message) error) {
 	wl.send = send
+}
+
+func (wl *WlCompositor) CreateSurface(newId uint32) error {
+	s := request.NewSerializer()
+
+	return wl.send(&protocol.Message{
+		ObjectID: wl.GetId(),
+		OpCode:   wlCompositorCreateSurface,
+		Payload:  s.Uint32(newId).Bytes(),
+	})
 }

@@ -11,8 +11,10 @@ type Window struct {
 	driver WindowDriver
 }
 
-func NewWindow() *Window {
-	return &Window{}
+func NewWindow(driver WindowDriver) *Window {
+	return &Window{
+		driver: driver,
+	}
 }
 
 func (w *Window) SetTitle(v string) {
