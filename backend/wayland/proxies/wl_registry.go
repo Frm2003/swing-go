@@ -19,7 +19,7 @@ const (
 
 type WlRegistry struct {
 	objectId uint32
-	send     func(*protocol.Message) error
+	send     func([]byte) error
 
 	globalStore *globalStore
 }
@@ -75,7 +75,7 @@ func (wl *WlRegistry) GetId() uint32 {
 	return wl.objectId
 }
 
-func (wl *WlRegistry) SetSender(send func(*protocol.Message) error) {
+func (wl *WlRegistry) SetSender(send func([]byte) error) {
 	wl.send = send
 }
 
@@ -84,7 +84,7 @@ func (w *WlRegistry) Bind(newObjectId uint32, iface string) error {
 
 	s := request.NewSerializer()
 
-	message := &protocol.Message{
+	data := protocol.Encode(&protocol.Message{
 		ObjectID: w.GetId(),
 		OpCode:   wlRegistryBind,
 		Payload: s.Uint32(g.name).
@@ -92,7 +92,7 @@ func (w *WlRegistry) Bind(newObjectId uint32, iface string) error {
 			Uint32(g.version).
 			Uint32(newObjectId).
 			Bytes(),
-	}
+	})
 
-	return w.send(message)
+	return w.send(data)
 }
