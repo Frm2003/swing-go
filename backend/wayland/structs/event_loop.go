@@ -1,6 +1,7 @@
 package structs
 
 import (
+	"fmt"
 	"swing-go/backend"
 	"swing-go/backend/wayland/protocol"
 )
@@ -12,7 +13,6 @@ type Command struct {
 
 type EventLoop struct {
 	commands  chan *Command
-	dispatch  *Dispatcher
 	store     *ProxyStore
 	transport *backend.Transport
 }
@@ -27,7 +27,6 @@ func NewEventLoop() *EventLoop {
 
 	loop := &EventLoop{
 		commands:  make(chan *Command),
-		dispatch:  NewDispatcher(store.Get),
 		store:     store,
 		transport: transport,
 	}
@@ -37,15 +36,18 @@ func NewEventLoop() *EventLoop {
 	return loop
 }
 
-func (e *EventLoop) Do(run func() error) error {
-	done := make(chan error, 1)
+func (e *EventLoop) dispatch(message *protocol.Message) error {
+	fmt.Println("Recebido: ", message)
 
-	e.commands <- &Command{
-		run:  run,
-		done: done,
+	proxy, ok := e.store.Get(message.ObjectID)
+
+	if !ok {
+		return fmt.Errorf("Proxy with id %d not found!", message.ObjectID)
 	}
 
-	return <-done
+	proxy.Handle(message)
+
+	return nil
 }
 
 func (e *EventLoop) receiveLoop() error {
@@ -57,9 +59,20 @@ func (e *EventLoop) receiveLoop() error {
 		}
 
 		e.Do(func() error {
-			return e.dispatch.dispatch(protocol.Decode(data))
+			return e.dispatch(protocol.Decode(data))
 		})
 	}
+}
+
+func (e *EventLoop) Do(run func() error) error {
+	done := make(chan error, 1)
+
+	e.commands <- &Command{
+		run:  run,
+		done: done,
+	}
+
+	return <-done
 }
 
 func (e *EventLoop) Send(data []byte) {
