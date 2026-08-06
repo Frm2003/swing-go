@@ -1,10 +1,13 @@
 package proxies
 
-import "swing-go/backend/wayland/protocol"
+import (
+	"swing-go/backend"
+	"swing-go/backend/wayland/protocol"
+)
 
 type WlShm struct {
 	objectId uint32
-	send     func(*protocol.Message) error
+	send     backend.Sender
 }
 
 func NewWlShm(newId uint32) *WlShm {
@@ -25,6 +28,6 @@ func (wl *WlShm) GetInterfaceName() string {
 	return "wl_shm"
 }
 
-func (wl *WlShm) SetSender(send func(*protocol.Message) error) {
+func (wl *WlShm) SetSender(send backend.Sender) {
 	wl.send = send
 }

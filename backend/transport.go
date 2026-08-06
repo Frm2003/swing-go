@@ -14,6 +14,8 @@ type connect func() (net.Conn, error)
 
 type frame func(io.Reader) ([]byte, error)
 
+type Sender func([]byte) error
+
 func NewTransport(connect connect, frame frame) *Transport {
 	conn, err := connect()
 

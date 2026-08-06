@@ -1,8 +1,9 @@
 package proxies
 
 import (
-	"encoding/binary"
+	"swing-go/backend"
 	"swing-go/backend/wayland/protocol"
+	"swing-go/backend/wayland/request"
 )
 
 const (
@@ -12,7 +13,7 @@ const (
 
 type WlDisplay struct {
 	objectId uint32
-	send     func([]byte) error
+	send     backend.Sender
 }
 
 func NewWlDisplay(newId uint32) *WlDisplay {
@@ -29,33 +30,29 @@ func (wl *WlDisplay) GetId() uint32 {
 	return wl.objectId
 }
 
-func (wl *WlDisplay) SetSender(send func([]byte) error) {
+func (wl *WlDisplay) SetSender(send backend.Sender) {
 	wl.send = send
 }
 
 func (wl *WlDisplay) Sync(newId uint32) error {
-	payload := make([]byte, 4)
-
-	binary.LittleEndian.PutUint32(payload[:4], newId)
+	s := request.NewSerializer()
 
 	data := protocol.Encode(&protocol.Message{
 		ObjectID: wl.GetId(),
 		OpCode:   wlDisplaySync,
-		Payload:  payload,
+		Payload:  s.Uint32(newId).Bytes(),
 	})
 
 	return wl.send(data)
 }
 
 func (wl *WlDisplay) GetRegistry(newId uint32) error {
-	payload := make([]byte, 4)
-
-	binary.LittleEndian.PutUint32(payload[:4], newId)
+	s := request.NewSerializer()
 
 	data := protocol.Encode(&protocol.Message{
 		ObjectID: wl.GetId(),
 		OpCode:   wlDisplayGetRegistry,
-		Payload:  payload,
+		Payload:  s.Uint32(newId).Bytes(),
 	})
 
 	return wl.send(data)

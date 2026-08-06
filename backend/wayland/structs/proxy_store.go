@@ -1,6 +1,7 @@
 package structs
 
 import (
+	"swing-go/backend"
 	"swing-go/backend/storage"
 	"swing-go/backend/wayland/protocol"
 )
@@ -14,8 +15,8 @@ type Proxy interface {
 	Handle(*protocol.Message)
 }
 
-type SenderAware interface {
-	SetSender(func([]byte) error)
+type senderAware interface {
+	SetSender(backend.Sender)
 }
 
 type allocator struct {
@@ -37,7 +38,7 @@ func CreateProxy[T Proxy](e *EventLoop, f Factory[T]) T {
 		newID := e.store.NewId()
 		obj := f(newID)
 
-		if p, ok := any(obj).(SenderAware); ok {
+		if p, ok := any(obj).(senderAware); ok {
 			p.SetSender(e.Send)
 		}
 

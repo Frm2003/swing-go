@@ -1,6 +1,7 @@
 package proxies
 
 import (
+	"swing-go/backend"
 	"swing-go/backend/wayland/protocol"
 	"swing-go/backend/wayland/request"
 )
@@ -12,7 +13,7 @@ const (
 
 type WlCompositor struct {
 	objectId uint32
-	send     func([]byte) error
+	send     backend.Sender
 }
 
 func NewWlCompositor(newId uint32) *WlCompositor {
@@ -33,7 +34,7 @@ func (wl *WlCompositor) GetInterfaceName() string {
 	return "wl_compositor"
 }
 
-func (wl *WlCompositor) SetSender(send func([]byte) error) {
+func (wl *WlCompositor) SetSender(send backend.Sender) {
 	wl.send = send
 }
 

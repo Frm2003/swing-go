@@ -1,6 +1,7 @@
 package proxies
 
 import (
+	"swing-go/backend"
 	"swing-go/backend/wayland/protocol"
 	"swing-go/backend/wayland/request"
 	"swing-go/backend/wayland/response"
@@ -19,7 +20,7 @@ const (
 
 type WlRegistry struct {
 	objectId uint32
-	send     func([]byte) error
+	send     backend.Sender
 
 	globalStore *globalStore
 }
@@ -75,7 +76,7 @@ func (wl *WlRegistry) GetId() uint32 {
 	return wl.objectId
 }
 
-func (wl *WlRegistry) SetSender(send func([]byte) error) {
+func (wl *WlRegistry) SetSender(send backend.Sender) {
 	wl.send = send
 }
 
