@@ -33,13 +33,15 @@ func NewProxyStore() *ProxyStore {
 }
 
 func CreateProxy[T Proxy](e *EventLoop, f Factory[T]) T {
-	newId := e.store.NewId()
-	obj := f(newId)
+	return call(e, func() T {
+		newID := e.store.NewId()
+		obj := f(newID)
 
-	if p, ok := Proxy(obj).(SenderAware); ok {
-		p.SetSender(e.transport.Send)
-	}
+		if p, ok := any(obj).(SenderAware); ok {
+			p.SetSender(e.Send)
+		}
 
-	e.store.Register(obj)
-	return obj
+		e.store.Register(obj)
+		return obj
+	})
 }

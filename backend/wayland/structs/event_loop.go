@@ -6,13 +6,8 @@ import (
 	"swing-go/backend/wayland/protocol"
 )
 
-type Command struct {
-	run  func() error
-	done chan error
-}
-
 type EventLoop struct {
-	commands  chan *Command
+	commands  chan iCommand
 	store     *ProxyStore
 	transport *backend.Transport
 }
@@ -26,7 +21,7 @@ func NewEventLoop() *EventLoop {
 	store := NewProxyStore()
 
 	loop := &EventLoop{
-		commands:  make(chan *Command),
+		commands:  make(chan iCommand),
 		store:     store,
 		transport: transport,
 	}
@@ -58,25 +53,20 @@ func (e *EventLoop) receiveLoop() error {
 			return err
 		}
 
-		e.Do(func() error {
+		call(e, func() error {
 			return e.dispatch(protocol.Decode(data))
 		})
 	}
 }
 
-func (e *EventLoop) Do(run func() error) error {
-	done := make(chan error, 1)
-
-	e.commands <- &Command{
-		run:  run,
-		done: done,
-	}
-
+func call[T any](e *EventLoop, f func() T) T {
+	done := make(chan T)
+	e.commands <- newCommand(f, done)
 	return <-done
 }
 
-func (e *EventLoop) Send(data []byte) {
-	e.Do(func() error {
+func (e *EventLoop) Send(data []byte) error {
+	return call(e, func() error {
 		return e.transport.Send(data)
 	})
 }
@@ -86,6 +76,6 @@ func (e *EventLoop) Run() {
 
 	for {
 		cmd := <-e.commands
-		cmd.done <- cmd.run()
+		cmd.execute()
 	}
 }

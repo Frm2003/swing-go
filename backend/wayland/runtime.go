@@ -10,7 +10,7 @@ type Runtime struct {
 
 	wlDIsplay  *proxies.WlDisplay
 	WlRegistry *proxies.WlRegistry
-	wlCallback *proxies.WlCallback
+	wlcallback *proxies.Wlcallback
 
 	wlCompositor *proxies.WlCompositor
 	wlShm        *proxies.WlShm
@@ -23,49 +23,44 @@ func NewRuntime() *Runtime {
 	}
 }
 
-func (r *Runtime) Bootstrap() {
-	r.loop.Do(func() error {
-		r.wlDIsplay = structs.CreateProxy(r.loop, proxies.NewWlDisplay)
-		r.WlRegistry = structs.CreateProxy(r.loop, proxies.NewWlRegistry)
+func (r *Runtime) Bootstrap() error {
+	r.wlDIsplay = structs.CreateProxy(r.loop, proxies.NewWlDisplay)
+	r.WlRegistry = structs.CreateProxy(r.loop, proxies.NewWlRegistry)
 
-		return nil
-	})
-
-	r.wlDIsplay.GetRegistry(r.WlRegistry.GetId())
-
-	r.Sync()
-
-	r.loop.Do(func() error {
-		r.wlCompositor = structs.CreateProxy(r.loop, proxies.NewWlCompositor)
-		return nil
-	})
-
-	r.loop.Do(func() error {
-		r.wlShm = structs.CreateProxy(r.loop, proxies.NewWlShm)
-		return nil
-	})
-
-	r.loop.Do(func() error {
-		r.XdgWmBase = structs.CreateProxy(r.loop, proxies.NewXdgWmBase)
-		return nil
-	})
-
-	r.WlRegistry.Bind(r.wlCompositor.GetId(), r.wlCompositor.GetInterfaceName())
-	r.WlRegistry.Bind(r.wlShm.GetId(), r.wlShm.GetInterfaceName())
-	r.WlRegistry.Bind(r.XdgWmBase.GetId(), r.XdgWmBase.GetInterfaceName())
-}
-
-func (r *Runtime) Sync() error {
-	r.loop.Do(func() error {
-		r.wlCallback = structs.CreateProxy(r.loop, proxies.NewWlCallback)
-		return nil
-	})
-
-	if err := r.wlDIsplay.Sync(r.wlCallback.GetId()); err != nil {
+	if err := r.wlDIsplay.GetRegistry(r.WlRegistry.GetId()); err != nil {
 		return err
 	}
 
-	r.wlCallback.Wait()
+	if err := r.Sync(); err != nil {
+		return err
+	}
+
+	r.wlCompositor = structs.CreateProxy(r.loop, proxies.NewWlCompositor)
+	if err := r.WlRegistry.Bind(r.wlCompositor.GetId(), r.wlCompositor.GetInterfaceName()); err != nil {
+		return err
+	}
+
+	r.wlShm = structs.CreateProxy(r.loop, proxies.NewWlShm)
+	if err := r.WlRegistry.Bind(r.wlShm.GetId(), r.wlShm.GetInterfaceName()); err != nil {
+		return err
+	}
+
+	r.XdgWmBase = structs.CreateProxy(r.loop, proxies.NewXdgWmBase)
+	if err := r.WlRegistry.Bind(r.XdgWmBase.GetId(), r.XdgWmBase.GetInterfaceName()); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *Runtime) Sync() error {
+	r.wlcallback = structs.CreateProxy(r.loop, proxies.NewWlcallback)
+
+	if err := r.wlDIsplay.Sync(r.wlcallback.GetId()); err != nil {
+		return err
+	}
+
+	r.wlcallback.Wait()
 
 	return nil
 }
