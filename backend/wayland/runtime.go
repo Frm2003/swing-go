@@ -1,6 +1,7 @@
 package wayland
 
 import (
+	"swing-go/application"
 	"swing-go/backend/wayland/proxies"
 	"swing-go/backend/wayland/structs"
 )
@@ -31,7 +32,7 @@ func (r *Runtime) Bootstrap() error {
 		return err
 	}
 
-	if err := r.Sync(); err != nil {
+	if err := r.sync(); err != nil {
 		return err
 	}
 
@@ -53,7 +54,7 @@ func (r *Runtime) Bootstrap() error {
 	return nil
 }
 
-func (r *Runtime) Sync() error {
+func (r *Runtime) sync() error {
 	r.wlcallback = structs.CreateProxy(r.loop, proxies.NewWlcallback)
 
 	if err := r.wlDIsplay.Sync(r.wlcallback.GetId()); err != nil {
@@ -63,4 +64,27 @@ func (r *Runtime) Sync() error {
 	r.wlcallback.Wait()
 
 	return nil
+}
+
+func (r *Runtime) NewWindow() (application.WindowDriver, error) {
+	surface := structs.CreateProxy(r.loop, proxies.NewWlSurface)
+	if err := r.wlCompositor.CreateSurface(surface.GetId()); err != nil {
+		return nil, err
+	}
+
+	xdgSurface := structs.CreateProxy(r.loop, proxies.NewXdgSurface)
+	if err := r.XdgWmBase.GetXdgSurface(xdgSurface.GetId(), surface.GetId()); err != nil {
+		return nil, err
+	}
+
+	xdgToplevel := structs.CreateProxy(r.loop, proxies.NewXdgToplevel)
+	if err := xdgSurface.GetToplevel(xdgToplevel.GetId()); err != nil {
+		return nil, err
+	}
+
+	if err := surface.Commit(); err != nil {
+		return nil, err
+	}
+
+	return &WindowDriver{surface, xdgSurface, xdgToplevel}, nil
 }
