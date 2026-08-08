@@ -7,7 +7,7 @@ import (
 )
 
 type Runtime struct {
-	loop *structs.EventLoop
+	dispatcher *structs.Dispatcher
 
 	wlDIsplay  *proxies.WlDisplay
 	WlRegistry *proxies.WlRegistry
@@ -19,14 +19,18 @@ type Runtime struct {
 }
 
 func NewRuntime() *Runtime {
+	dispatcher := structs.NewDispatcher()
+
+	go dispatcher.Run()
+
 	return &Runtime{
-		loop: structs.NewEventLoop(),
+		dispatcher: dispatcher,
 	}
 }
 
 func (r *Runtime) Bootstrap() error {
-	r.wlDIsplay = structs.CreateProxy(r.loop, proxies.NewWlDisplay)
-	r.WlRegistry = structs.CreateProxy(r.loop, proxies.NewWlRegistry)
+	r.wlDIsplay = structs.CreateProxy(r.dispatcher, proxies.NewWlDisplay)
+	r.WlRegistry = structs.CreateProxy(r.dispatcher, proxies.NewWlRegistry)
 
 	if err := r.wlDIsplay.GetRegistry(r.WlRegistry.GetId()); err != nil {
 		return err
@@ -36,17 +40,17 @@ func (r *Runtime) Bootstrap() error {
 		return err
 	}
 
-	r.wlCompositor = structs.CreateProxy(r.loop, proxies.NewWlCompositor)
+	r.wlCompositor = structs.CreateProxy(r.dispatcher, proxies.NewWlCompositor)
 	if err := r.WlRegistry.Bind(r.wlCompositor.GetId(), r.wlCompositor.GetInterfaceName()); err != nil {
 		return err
 	}
 
-	r.wlShm = structs.CreateProxy(r.loop, proxies.NewWlShm)
+	r.wlShm = structs.CreateProxy(r.dispatcher, proxies.NewWlShm)
 	if err := r.WlRegistry.Bind(r.wlShm.GetId(), r.wlShm.GetInterfaceName()); err != nil {
 		return err
 	}
 
-	r.XdgWmBase = structs.CreateProxy(r.loop, proxies.NewXdgWmBase)
+	r.XdgWmBase = structs.CreateProxy(r.dispatcher, proxies.NewXdgWmBase)
 	if err := r.WlRegistry.Bind(r.XdgWmBase.GetId(), r.XdgWmBase.GetInterfaceName()); err != nil {
 		return err
 	}
@@ -55,7 +59,7 @@ func (r *Runtime) Bootstrap() error {
 }
 
 func (r *Runtime) sync() error {
-	r.wlcallback = structs.CreateProxy(r.loop, proxies.NewWlcallback)
+	r.wlcallback = structs.CreateProxy(r.dispatcher, proxies.NewWlcallback)
 
 	if err := r.wlDIsplay.Sync(r.wlcallback.GetId()); err != nil {
 		return err
@@ -67,17 +71,17 @@ func (r *Runtime) sync() error {
 }
 
 func (r *Runtime) NewWindow() (application.WindowDriver, error) {
-	surface := structs.CreateProxy(r.loop, proxies.NewWlSurface)
+	surface := structs.CreateProxy(r.dispatcher, proxies.NewWlSurface)
 	if err := r.wlCompositor.CreateSurface(surface.GetId()); err != nil {
 		return nil, err
 	}
 
-	xdgSurface := structs.CreateProxy(r.loop, proxies.NewXdgSurface)
+	xdgSurface := structs.CreateProxy(r.dispatcher, proxies.NewXdgSurface)
 	if err := r.XdgWmBase.GetXdgSurface(xdgSurface.GetId(), surface.GetId()); err != nil {
 		return nil, err
 	}
 
-	xdgToplevel := structs.CreateProxy(r.loop, proxies.NewXdgToplevel)
+	xdgToplevel := structs.CreateProxy(r.dispatcher, proxies.NewXdgToplevel)
 	if err := xdgSurface.GetToplevel(xdgToplevel.GetId()); err != nil {
 		return nil, err
 	}

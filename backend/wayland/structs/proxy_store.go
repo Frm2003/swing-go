@@ -32,17 +32,3 @@ func (a *allocator) NewId() uint32 {
 func NewProxyStore() *ProxyStore {
 	return storage.NewStore[uint32, Proxy](&allocator{1})
 }
-
-func CreateProxy[T Proxy](e *EventLoop, f Factory[T]) T {
-	return call(e, func() T {
-		newID := e.store.NewId()
-		obj := f(newID)
-
-		if p, ok := any(obj).(senderAware); ok {
-			p.SetSender(e.Send)
-		}
-
-		e.store.Register(obj)
-		return obj
-	})
-}
