@@ -9,7 +9,23 @@ import (
 	"path/filepath"
 )
 
-func Connect() (net.Conn, error) {
+type Transport struct {
+	conn net.Conn
+}
+
+func NewTransport() *Transport {
+	conn, err := connect()
+
+	if err != nil {
+		panic(err)
+	}
+
+	return &Transport{
+		conn: conn,
+	}
+}
+
+func connect() (net.Conn, error) {
 	runtimeDir := os.Getenv("XDG_RUNTIME_DIR")
 
 	if runtimeDir == "" {
@@ -27,17 +43,35 @@ func Connect() (net.Conn, error) {
 	return net.Dial("unix", socketPath)
 }
 
-func Frame(conn io.Reader) ([]byte, error) {
+func (t *Transport) Send(message *Message) error {
+	var total = 0
+
+	data := encode(message)
+
+	for total < len(data) {
+		n, err := t.conn.Write(data[total:])
+
+		if err != nil {
+			return err
+		}
+
+		total += n
+	}
+
+	return nil
+}
+
+func (t *Transport) Receive() (*Message, error) {
 	header := make([]byte, 8)
 
-	if _, err := io.ReadFull(conn, header); err != nil {
+	if _, err := io.ReadFull(t.conn, header); err != nil {
 		return nil, err
 	}
 
 	size := binary.LittleEndian.Uint16(header[6:8])
 	payload := make([]byte, size-8)
 
-	if _, err := io.ReadFull(conn, payload); err != nil {
+	if _, err := io.ReadFull(t.conn, payload); err != nil {
 		return nil, err
 	}
 
@@ -46,5 +80,5 @@ func Frame(conn io.Reader) ([]byte, error) {
 	copy(result[:8], header)
 	copy(result[8:], payload)
 
-	return result, nil
+	return decode(result), nil
 }

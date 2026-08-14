@@ -2,21 +2,19 @@ package structs
 
 import (
 	"fmt"
-	"swing-go/backend"
 	"swing-go/backend/wayland/protocol"
 )
 
+type Sender func(*protocol.Message) error
+
 type Dispatcher struct {
 	store     *ProxyStore
-	transport *backend.Transport
+	transport *protocol.Transport
 	eventLoop *EventLoop
 }
 
 func NewDispatcher() *Dispatcher {
-	transport := backend.NewTransport(
-		protocol.Connect,
-		protocol.Frame,
-	)
+	transport := protocol.NewTransport()
 
 	return &Dispatcher{
 		eventLoop: NewEventLoop(),
@@ -37,9 +35,9 @@ func (d *Dispatcher) dispatch(message *protocol.Message) error {
 	return nil
 }
 
-func (d *Dispatcher) Send(data []byte) error {
+func (d *Dispatcher) Send(message *protocol.Message) error {
 	return call(d.eventLoop, func() error {
-		return d.transport.Send(data)
+		return d.transport.Send(message)
 	})
 }
 
@@ -59,14 +57,14 @@ func CreateProxy[T Proxy](d *Dispatcher, f Factory[T]) T {
 
 func (d *Dispatcher) Run() error {
 	for {
-		data, err := d.transport.Receive()
+		msg, err := d.transport.Receive()
 
 		if err != nil {
 			return err
 		}
 
 		err = call(d.eventLoop, func() error {
-			return d.dispatch(protocol.Decode(data))
+			return d.dispatch(msg)
 		})
 
 		if err != nil {

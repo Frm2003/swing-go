@@ -1,9 +1,9 @@
 package proxies
 
 import (
-	"swing-go/backend"
 	"swing-go/backend/wayland/protocol"
 	"swing-go/backend/wayland/request"
+	"swing-go/backend/wayland/structs"
 )
 
 // xdg_toplevel requests
@@ -34,7 +34,7 @@ const (
 
 type XdgToplevel struct {
 	objectId uint32
-	send     backend.Sender
+	send     structs.Sender
 }
 
 func NewXdgToplevel(newId uint32) *XdgToplevel {
@@ -51,30 +51,26 @@ func (xdg *XdgToplevel) GetId() uint32 {
 	return xdg.objectId
 }
 
-func (xdg *XdgToplevel) SetSender(send backend.Sender) {
+func (xdg *XdgToplevel) SetSender(send structs.Sender) {
 	xdg.send = send
 }
 
 func (xdg *XdgToplevel) SetTitle(v string) error {
 	s := request.NewSerializer()
 
-	data := protocol.Encode(&protocol.Message{
+	return xdg.send(&protocol.Message{
 		ObjectID: xdg.GetId(),
 		OpCode:   xdgToplevelSetTitle,
 		Payload:  s.String(v).Bytes(),
 	})
-
-	return xdg.send(data)
 }
 
 func (xdg *XdgToplevel) SetAppID(v string) error {
 	s := request.NewSerializer()
 
-	data := protocol.Encode(&protocol.Message{
+	return xdg.send(&protocol.Message{
 		ObjectID: xdg.GetId(),
 		OpCode:   xdgToplevelSetAppID,
 		Payload:  s.String(v).Bytes(),
 	})
-
-	return xdg.send(data)
 }

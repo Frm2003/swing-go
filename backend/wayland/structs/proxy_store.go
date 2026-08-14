@@ -1,7 +1,6 @@
 package structs
 
 import (
-	"swing-go/backend"
 	"swing-go/backend/storage"
 	"swing-go/backend/wayland/protocol"
 )
@@ -16,7 +15,7 @@ type Proxy interface {
 }
 
 type senderAware interface {
-	SetSender(backend.Sender)
+	SetSender(Sender)
 }
 
 type allocator struct {

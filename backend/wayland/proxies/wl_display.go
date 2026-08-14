@@ -1,9 +1,9 @@
 package proxies
 
 import (
-	"swing-go/backend"
 	"swing-go/backend/wayland/protocol"
 	"swing-go/backend/wayland/request"
+	"swing-go/backend/wayland/structs"
 )
 
 const (
@@ -13,7 +13,7 @@ const (
 
 type WlDisplay struct {
 	objectId uint32
-	send     backend.Sender
+	send     structs.Sender
 }
 
 func NewWlDisplay(newId uint32) *WlDisplay {
@@ -30,30 +30,26 @@ func (wl *WlDisplay) GetId() uint32 {
 	return wl.objectId
 }
 
-func (wl *WlDisplay) SetSender(send backend.Sender) {
+func (wl *WlDisplay) SetSender(send structs.Sender) {
 	wl.send = send
 }
 
 func (wl *WlDisplay) Sync(newId uint32) error {
 	s := request.NewSerializer()
 
-	data := protocol.Encode(&protocol.Message{
+	return wl.send(&protocol.Message{
 		ObjectID: wl.GetId(),
 		OpCode:   wlDisplaySync,
 		Payload:  s.Uint32(newId).Bytes(),
 	})
-
-	return wl.send(data)
 }
 
 func (wl *WlDisplay) GetRegistry(newId uint32) error {
 	s := request.NewSerializer()
 
-	data := protocol.Encode(&protocol.Message{
+	return wl.send(&protocol.Message{
 		ObjectID: wl.GetId(),
 		OpCode:   wlDisplayGetRegistry,
 		Payload:  s.Uint32(newId).Bytes(),
 	})
-
-	return wl.send(data)
 }
