@@ -1,4 +1,4 @@
-package structs
+package infrastruct
 
 type EventLoop struct {
 	commands chan iCommand

@@ -1,10 +1,8 @@
 package proxies
 
 import (
+	"swing-go/backend/wayland/infrastruct"
 	"swing-go/backend/wayland/protocol"
-	"swing-go/backend/wayland/request"
-	"swing-go/backend/wayland/response"
-	"swing-go/backend/wayland/structs"
 )
 
 // wl_registry requests
@@ -20,7 +18,7 @@ const (
 
 type WlRegistry struct {
 	objectId uint32
-	send     structs.Sender
+	send     infrastruct.Sender
 
 	globalStore *globalStore
 }
@@ -57,7 +55,7 @@ func (wl *WlRegistry) Handle(message *protocol.Message) {
 }
 
 func (wl *WlRegistry) registryGlobal(payload []byte) {
-	d := response.NewDeSerializer(payload)
+	d := protocol.NewDeSerializer(payload)
 
 	name := d.Uint32()
 	iface := d.String()
@@ -76,14 +74,14 @@ func (wl *WlRegistry) GetId() uint32 {
 	return wl.objectId
 }
 
-func (wl *WlRegistry) SetSender(send structs.Sender) {
+func (wl *WlRegistry) SetSender(send infrastruct.Sender) {
 	wl.send = send
 }
 
 func (w *WlRegistry) Bind(newObjectId uint32, iface string) error {
 	g := w.globalStore.byIface[iface][0]
 
-	s := request.NewSerializer()
+	s := protocol.NewSerializer()
 
 	return w.send(&protocol.Message{
 		ObjectID: w.GetId(),

@@ -1,13 +1,13 @@
 package proxies
 
 import (
+	"swing-go/backend/wayland/infrastruct"
 	"swing-go/backend/wayland/protocol"
-	"swing-go/backend/wayland/structs"
 )
 
 type WlShmPool struct {
 	objectId uint32
-	send     structs.Sender
+	send     infrastruct.Sender
 }
 
 func NewWlShmPool(newId uint32) *WlShmPool {
@@ -24,6 +24,6 @@ func (wl *WlShmPool) GetId() uint32 {
 	return wl.objectId
 }
 
-func (wl *WlShmPool) SetSender(send structs.Sender) {
+func (wl *WlShmPool) SetSender(send infrastruct.Sender) {
 	wl.send = send
 }

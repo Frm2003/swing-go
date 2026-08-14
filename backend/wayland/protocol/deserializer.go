@@ -1,4 +1,4 @@
-package response
+package protocol
 
 import "encoding/binary"
 

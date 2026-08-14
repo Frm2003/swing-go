@@ -1,4 +1,4 @@
-package structs
+package infrastruct
 
 import (
 	"swing-go/backend/storage"

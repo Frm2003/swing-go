@@ -1,8 +1,8 @@
 package proxies
 
 import (
+	"swing-go/backend/wayland/infrastruct"
 	"swing-go/backend/wayland/protocol"
-	"swing-go/backend/wayland/structs"
 )
 
 // wl_surface requests
@@ -28,7 +28,7 @@ const (
 
 type WlSurface struct {
 	objectId uint32
-	send     structs.Sender
+	send     infrastruct.Sender
 }
 
 func NewWlSurface(newId uint32) *WlSurface {
@@ -45,7 +45,7 @@ func (wl *WlSurface) GetId() uint32 {
 	return wl.objectId
 }
 
-func (wl *WlSurface) SetSender(send structs.Sender) {
+func (wl *WlSurface) SetSender(send infrastruct.Sender) {
 	wl.send = send
 }
 

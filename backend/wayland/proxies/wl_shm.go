@@ -1,9 +1,8 @@
 package proxies
 
 import (
+	"swing-go/backend/wayland/infrastruct"
 	"swing-go/backend/wayland/protocol"
-	"swing-go/backend/wayland/request"
-	"swing-go/backend/wayland/structs"
 )
 
 // wl_shm requests
@@ -19,7 +18,7 @@ const (
 
 type WlShm struct {
 	objectId uint32
-	send     structs.Sender
+	send     infrastruct.Sender
 }
 
 func NewWlShm(newId uint32) *WlShm {
@@ -40,12 +39,12 @@ func (wl *WlShm) GetInterfaceName() string {
 	return "wl_shm"
 }
 
-func (wl *WlShm) SetSender(send structs.Sender) {
+func (wl *WlShm) SetSender(send infrastruct.Sender) {
 	wl.send = send
 }
 
 func (wl *WlShm) CreatePool(newId uint32, fd, size int) error {
-	s := request.NewSerializer()
+	s := protocol.NewSerializer()
 
 	return wl.send(&protocol.Message{
 		ObjectID: wl.GetId(),

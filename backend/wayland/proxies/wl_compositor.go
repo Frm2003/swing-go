@@ -1,9 +1,8 @@
 package proxies
 
 import (
+	"swing-go/backend/wayland/infrastruct"
 	"swing-go/backend/wayland/protocol"
-	"swing-go/backend/wayland/request"
-	"swing-go/backend/wayland/structs"
 )
 
 const (
@@ -13,7 +12,7 @@ const (
 
 type WlCompositor struct {
 	objectId uint32
-	send     structs.Sender
+	send     infrastruct.Sender
 }
 
 func NewWlCompositor(newId uint32) *WlCompositor {
@@ -34,12 +33,12 @@ func (wl *WlCompositor) GetInterfaceName() string {
 	return "wl_compositor"
 }
 
-func (wl *WlCompositor) SetSender(send structs.Sender) {
+func (wl *WlCompositor) SetSender(send infrastruct.Sender) {
 	wl.send = send
 }
 
 func (wl *WlCompositor) CreateSurface(newId uint32) error {
-	s := request.NewSerializer()
+	s := protocol.NewSerializer()
 
 	return wl.send(&protocol.Message{
 		ObjectID: wl.GetId(),

@@ -1,9 +1,8 @@
 package proxies
 
 import (
+	"swing-go/backend/wayland/infrastruct"
 	"swing-go/backend/wayland/protocol"
-	"swing-go/backend/wayland/request"
-	"swing-go/backend/wayland/structs"
 )
 
 const (
@@ -21,7 +20,7 @@ const (
 
 type XdgSurface struct {
 	objectId uint32
-	send     structs.Sender
+	send     infrastruct.Sender
 }
 
 func NewXdgSurface(newId uint32) *XdgSurface {
@@ -38,12 +37,12 @@ func (xdg *XdgSurface) GetId() uint32 {
 	return xdg.objectId
 }
 
-func (xdg *XdgSurface) SetSender(send structs.Sender) {
+func (xdg *XdgSurface) SetSender(send infrastruct.Sender) {
 	xdg.send = send
 }
 
 func (xdg *XdgSurface) GetToplevel(newId uint32) error {
-	s := request.NewSerializer()
+	s := protocol.NewSerializer()
 
 	return xdg.send(&protocol.Message{
 		ObjectID: xdg.GetId(),

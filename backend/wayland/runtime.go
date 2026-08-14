@@ -2,16 +2,15 @@ package wayland
 
 import (
 	"swing-go/application"
+	"swing-go/backend/wayland/infrastruct"
 	"swing-go/backend/wayland/proxies"
-	"swing-go/backend/wayland/structs"
 )
 
 type Runtime struct {
-	dispatcher *structs.Dispatcher
+	dispatcher *infrastruct.Dispatcher
 
 	wlDIsplay  *proxies.WlDisplay
 	WlRegistry *proxies.WlRegistry
-	wlcallback *proxies.Wlcallback
 
 	wlCompositor *proxies.WlCompositor
 	wlShm        *proxies.WlShm
@@ -19,7 +18,7 @@ type Runtime struct {
 }
 
 func NewRuntime() *Runtime {
-	dispatcher := structs.NewDispatcher()
+	dispatcher := infrastruct.NewDispatcher()
 
 	go dispatcher.Run()
 
@@ -29,8 +28,8 @@ func NewRuntime() *Runtime {
 }
 
 func (r *Runtime) Bootstrap() error {
-	r.wlDIsplay = structs.CreateProxy(r.dispatcher, proxies.NewWlDisplay)
-	r.WlRegistry = structs.CreateProxy(r.dispatcher, proxies.NewWlRegistry)
+	r.wlDIsplay = infrastruct.CreateProxy(r.dispatcher, proxies.NewWlDisplay)
+	r.WlRegistry = infrastruct.CreateProxy(r.dispatcher, proxies.NewWlRegistry)
 
 	if err := r.wlDIsplay.GetRegistry(r.WlRegistry.GetId()); err != nil {
 		return err
@@ -40,17 +39,17 @@ func (r *Runtime) Bootstrap() error {
 		return err
 	}
 
-	r.wlCompositor = structs.CreateProxy(r.dispatcher, proxies.NewWlCompositor)
+	r.wlCompositor = infrastruct.CreateProxy(r.dispatcher, proxies.NewWlCompositor)
 	if err := r.WlRegistry.Bind(r.wlCompositor.GetId(), r.wlCompositor.GetInterfaceName()); err != nil {
 		return err
 	}
 
-	r.wlShm = structs.CreateProxy(r.dispatcher, proxies.NewWlShm)
+	r.wlShm = infrastruct.CreateProxy(r.dispatcher, proxies.NewWlShm)
 	if err := r.WlRegistry.Bind(r.wlShm.GetId(), r.wlShm.GetInterfaceName()); err != nil {
 		return err
 	}
 
-	r.XdgWmBase = structs.CreateProxy(r.dispatcher, proxies.NewXdgWmBase)
+	r.XdgWmBase = infrastruct.CreateProxy(r.dispatcher, proxies.NewXdgWmBase)
 	if err := r.WlRegistry.Bind(r.XdgWmBase.GetId(), r.XdgWmBase.GetInterfaceName()); err != nil {
 		return err
 	}
@@ -59,29 +58,29 @@ func (r *Runtime) Bootstrap() error {
 }
 
 func (r *Runtime) sync() error {
-	r.wlcallback = structs.CreateProxy(r.dispatcher, proxies.NewWlcallback)
+	wlcallback := infrastruct.CreateProxy(r.dispatcher, proxies.NewWlcallback)
 
-	if err := r.wlDIsplay.Sync(r.wlcallback.GetId()); err != nil {
+	if err := r.wlDIsplay.Sync(wlcallback.GetId()); err != nil {
 		return err
 	}
 
-	r.wlcallback.Wait()
+	wlcallback.Wait()
 
 	return nil
 }
 
 func (r *Runtime) NewWindow(width, height int) (application.WindowDriver, error) {
-	surface := structs.CreateProxy(r.dispatcher, proxies.NewWlSurface)
+	surface := infrastruct.CreateProxy(r.dispatcher, proxies.NewWlSurface)
 	if err := r.wlCompositor.CreateSurface(surface.GetId()); err != nil {
 		return nil, err
 	}
 
-	xdgSurface := structs.CreateProxy(r.dispatcher, proxies.NewXdgSurface)
+	xdgSurface := infrastruct.CreateProxy(r.dispatcher, proxies.NewXdgSurface)
 	if err := r.XdgWmBase.GetXdgSurface(xdgSurface.GetId(), surface.GetId()); err != nil {
 		return nil, err
 	}
 
-	xdgToplevel := structs.CreateProxy(r.dispatcher, proxies.NewXdgToplevel)
+	xdgToplevel := infrastruct.CreateProxy(r.dispatcher, proxies.NewXdgToplevel)
 	if err := xdgSurface.GetToplevel(xdgToplevel.GetId()); err != nil {
 		return nil, err
 	}
@@ -101,7 +100,7 @@ func (r *Runtime) NewWindow(width, height int) (application.WindowDriver, error)
 }
 
 func (r *Runtime) createBuffer(size int) (*BufferManager, error) {
-	wlShmPool := structs.CreateProxy(r.dispatcher, proxies.NewWlShmPool)
+	wlShmPool := infrastruct.CreateProxy(r.dispatcher, proxies.NewWlShmPool)
 	bm, err := NewBufferManager(wlShmPool, size)
 
 	if err != nil {
