@@ -9,7 +9,7 @@ func main() {
 	runtime := wayland.NewRuntime()
 
 	app := application.NewApp(runtime)
-	window := app.NewWindow()
+	window := app.NewWindow(800, 600)
 
 	window.SetTitle("new_window")
 

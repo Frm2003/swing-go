@@ -70,7 +70,7 @@ func (r *Runtime) sync() error {
 	return nil
 }
 
-func (r *Runtime) NewWindow() (application.WindowDriver, error) {
+func (r *Runtime) NewWindow(width, height int) (application.WindowDriver, error) {
 	surface := structs.CreateProxy(r.dispatcher, proxies.NewWlSurface)
 	if err := r.wlCompositor.CreateSurface(surface.GetId()); err != nil {
 		return nil, err
@@ -90,5 +90,27 @@ func (r *Runtime) NewWindow() (application.WindowDriver, error) {
 		return nil, err
 	}
 
-	return &WindowDriver{surface, xdgSurface, xdgToplevel}, nil
+	bm, err := r.createBuffer(width * height * 4)
+
+	if err != nil {
+		bm.Close()
+		return nil, err
+	}
+
+	return &WindowDriver{bm, surface, xdgSurface, xdgToplevel}, nil
+}
+
+func (r *Runtime) createBuffer(size int) (*BufferManager, error) {
+	wlShmPool := structs.CreateProxy(r.dispatcher, proxies.NewWlShmPool)
+	bm, err := NewBufferManager(wlShmPool, size)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.wlShm.CreatePool(wlShmPool.GetId(), bm.Fd, size); err != nil {
+		return nil, err
+	}
+
+	return bm, nil
 }

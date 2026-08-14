@@ -6,6 +6,7 @@ type Message struct {
 	ObjectID uint32
 	OpCode   uint16
 	Payload  []byte
+	Fds      []int
 }
 
 func decode(data []byte) *Message {

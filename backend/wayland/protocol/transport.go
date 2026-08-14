@@ -7,15 +7,16 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+
+	"golang.org/x/sys/unix"
 )
 
 type Transport struct {
-	conn net.Conn
+	conn *net.UnixConn
 }
 
 func NewTransport() *Transport {
 	conn, err := connect()
-
 	if err != nil {
 		panic(err)
 	}
@@ -25,37 +26,55 @@ func NewTransport() *Transport {
 	}
 }
 
-func connect() (net.Conn, error) {
+func connect() (*net.UnixConn, error) {
 	runtimeDir := os.Getenv("XDG_RUNTIME_DIR")
-
 	if runtimeDir == "" {
 		return nil, fmt.Errorf("XDG_RUNTIME_DIR não definido")
 	}
 
 	display := os.Getenv("WAYLAND_DISPLAY")
-
 	if display == "" {
 		display = "wayland-0"
 	}
 
 	socketPath := filepath.Join(runtimeDir, display)
 
-	return net.Dial("unix", socketPath)
+	conn, err := net.DialUnix("unix", nil, &net.UnixAddr{
+		Net:  "unix",
+		Name: socketPath,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return conn, nil
 }
 
 func (t *Transport) Send(message *Message) error {
-	var total = 0
-
 	data := encode(message)
 
-	for total < len(data) {
-		n, err := t.conn.Write(data[total:])
+	var oob []byte
+	if len(message.Fds) > 0 {
+		oob = unix.UnixRights(message.Fds...)
+	}
 
+	total := 0
+
+	for total < len(data) {
+		n, _, err := t.conn.WriteMsgUnix(
+			data[total:],
+			oob,
+			nil,
+		)
 		if err != nil {
 			return err
 		}
 
 		total += n
+
+		// Os ancillary data devem ser enviados junto com a primeira escrita.
+		oob = nil
 	}
 
 	return nil

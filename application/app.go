@@ -14,8 +14,8 @@ func NewApp(runtime Runtime) *App {
 	}
 }
 
-func (a *App) NewWindow() *Window {
-	driver, err := a.runtime.NewWindow()
+func (a *App) NewWindow(width, height int) *Window {
+	driver, err := a.runtime.NewWindow(width, height)
 
 	if err != nil {
 		panic(err)

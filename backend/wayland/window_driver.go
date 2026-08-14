@@ -3,6 +3,7 @@ package wayland
 import "swing-go/backend/wayland/proxies"
 
 type WindowDriver struct {
+	bm          *BufferManager
 	surface     *proxies.WlSurface
 	xdgSurface  *proxies.XdgSurface
 	xdgToplevel *proxies.XdgToplevel

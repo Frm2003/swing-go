@@ -2,5 +2,5 @@ package application
 
 type Runtime interface {
 	Bootstrap() error
-	NewWindow() (WindowDriver, error)
+	NewWindow(width, height int) (WindowDriver, error)
 }
