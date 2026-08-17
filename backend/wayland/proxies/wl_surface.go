@@ -49,6 +49,33 @@ func (wl *WlSurface) SetSender(send infrastruct.Sender) {
 	wl.send = send
 }
 
+func (wl *WlSurface) Attach(newId, x, y uint32) error {
+	s := protocol.NewSerializer()
+
+	return wl.send(&protocol.Message{
+		ObjectID: wl.GetId(),
+		OpCode:   wlSurfaceAttach,
+		Payload: s.Uint32(newId).
+			Uint32(x).
+			Uint32(y).
+			Bytes(),
+	})
+}
+
+func (wl *WlSurface) Damage(x, y, width, height int) error {
+	s := protocol.NewSerializer()
+
+	return wl.send(&protocol.Message{
+		ObjectID: wl.GetId(),
+		OpCode:   wlSurfaceDamage,
+		Payload: s.Uint32(uint32(x)).
+			Uint32(uint32(y)).
+			Uint32(uint32(width)).
+			Uint32(uint32(height)).
+			Bytes(),
+	})
+}
+
 func (wl *WlSurface) Commit() error {
 	return wl.send(&protocol.Message{
 		ObjectID: wl.GetId(),

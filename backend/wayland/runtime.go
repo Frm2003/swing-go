@@ -2,6 +2,7 @@ package wayland
 
 import (
 	"swing-go/application"
+	"swing-go/backend/wayland/graphics"
 	"swing-go/backend/wayland/infrastruct"
 	"swing-go/backend/wayland/proxies"
 )
@@ -69,7 +70,7 @@ func (r *Runtime) sync() error {
 	return nil
 }
 
-func (r *Runtime) NewWindow(width, height int) (application.WindowDriver, error) {
+func (r *Runtime) NewWindow(state *application.WindowState) (application.WindowDriver, error) {
 	surface := infrastruct.CreateProxy(r.dispatcher, proxies.NewWlSurface)
 	if err := r.wlCompositor.CreateSurface(surface.GetId()); err != nil {
 		return nil, err
@@ -89,27 +90,56 @@ func (r *Runtime) NewWindow(width, height int) (application.WindowDriver, error)
 		return nil, err
 	}
 
-	bm, err := r.createBuffer(width * height * 4)
-
-	if err != nil {
-		bm.Close()
+	if err := r.sync(); err != nil {
 		return nil, err
 	}
 
-	return &WindowDriver{bm, surface, xdgSurface, xdgToplevel}, nil
+	bufferManager, err := graphics.NewBufferManager(r.newShmPool, r.createBuffer, state.Width, state.Height)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &graphics.Driver{
+		State:         state,
+		BufferManager: bufferManager,
+		Surface:       surface,
+		XdgSurface:    xdgSurface,
+		XdgToplevel:   xdgToplevel,
+	}, nil
 }
 
-func (r *Runtime) createBuffer(size int) (*BufferManager, error) {
-	wlShmPool := infrastruct.CreateProxy(r.dispatcher, proxies.NewWlShmPool)
-	bm, err := NewBufferManager(wlShmPool, size)
+func (r *Runtime) newShmPool(fd, size int) (*proxies.WlShmPool, error) {
+	whShmPool := infrastruct.CreateProxy(r.dispatcher, proxies.NewWlShmPool)
 
-	if err != nil {
+	if err := r.wlShm.CreatePool(whShmPool.GetId(), fd, size); err != nil {
 		return nil, err
 	}
 
-	if err := r.wlShm.CreatePool(wlShmPool.GetId(), bm.Fd, size); err != nil {
+	return whShmPool, nil
+}
+
+func (r *Runtime) createBuffer(d *graphics.Driver) (*graphics.Buffer, error) {
+	wlBuffer := infrastruct.CreateProxy(r.dispatcher, proxies.NewWlBuffer)
+
+	offset := len(d.BufferManager.Buffers) * d.BufferManager.Size
+
+	if err := d.BufferManager.WlShmPool.CreateBuffer(
+		wlBuffer.GetId(),
+		int32(offset),
+		int32(d.State.Width),
+		int32(d.State.Height),
+		int32(d.BufferManager.Stride),
+		0,
+	); err != nil {
 		return nil, err
 	}
 
-	return bm, nil
+	newBuffer := &graphics.Buffer{
+		WlBuffer: wlBuffer,
+		Offset:   offset,
+		Busy:     false,
+	}
+
+	return newBuffer, nil
 }

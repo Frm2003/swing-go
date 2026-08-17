@@ -1,11 +1,12 @@
 package application
 
 type Window struct {
+	state  *WindowState
 	driver WindowDriver
 }
 
-func (w *Window) Show() {
-
+func (w *Window) Show() error {
+	return w.driver.Show()
 }
 
 func (w *Window) Close() {

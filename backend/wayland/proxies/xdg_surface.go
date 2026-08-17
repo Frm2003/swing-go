@@ -21,6 +21,8 @@ const (
 type XdgSurface struct {
 	objectId uint32
 	send     infrastruct.Sender
+
+	serial uint32
 }
 
 func NewXdgSurface(newId uint32) *XdgSurface {
@@ -30,7 +32,15 @@ func NewXdgSurface(newId uint32) *XdgSurface {
 }
 
 func (xdg *XdgSurface) Handle(message *protocol.Message) {
+	switch message.OpCode {
+	case xdgSurfaceConfigure:
+		xdg.handleConfigure(message.Payload)
+	}
+}
 
+func (xdg *XdgSurface) handleConfigure(payload []byte) {
+	d := protocol.NewDeSerializer(payload)
+	xdg.serial = d.Uint32()
 }
 
 func (xdg *XdgSurface) GetId() uint32 {
@@ -48,5 +58,15 @@ func (xdg *XdgSurface) GetToplevel(newId uint32) error {
 		ObjectID: xdg.GetId(),
 		OpCode:   xdgSurfaceGetToplevel,
 		Payload:  s.Uint32(newId).Bytes(),
+	})
+}
+
+func (xdg *XdgSurface) AckConfigure() error {
+	s := protocol.NewSerializer()
+
+	return xdg.send(&protocol.Message{
+		ObjectID: xdg.GetId(),
+		OpCode:   xdgSurfaceAckConfigure,
+		Payload:  s.Uint32(xdg.serial).Bytes(),
 	})
 }

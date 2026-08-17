@@ -12,6 +12,7 @@ func main() {
 	window := app.NewWindow(800, 600)
 
 	window.SetTitle("new_window")
+	window.Show()
 
 	select {}
 }

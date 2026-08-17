@@ -15,13 +15,19 @@ func NewApp(runtime Runtime) *App {
 }
 
 func (a *App) NewWindow(width, height int) *Window {
-	driver, err := a.runtime.NewWindow(width, height)
+	state := &WindowState{
+		Width:  width,
+		Height: height,
+	}
+
+	driver, err := a.runtime.NewWindow(state)
 
 	if err != nil {
 		panic(err)
 	}
 
 	return &Window{
+		state:  state,
 		driver: driver,
 	}
 }
