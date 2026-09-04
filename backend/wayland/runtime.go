@@ -4,7 +4,9 @@ import (
 	"swing-go/application"
 	"swing-go/backend/wayland/graphics"
 	"swing-go/backend/wayland/infrastruct"
+	"swing-go/backend/wayland/protocol"
 	"swing-go/backend/wayland/proxies"
+	"swing-go/ui"
 )
 
 type Runtime struct {
@@ -70,7 +72,7 @@ func (r *Runtime) sync() error {
 	return nil
 }
 
-func (r *Runtime) NewWindow(state *application.WindowState) (application.WindowDriver, error) {
+func (r *Runtime) NewWindow(width, height int) (application.Driver, error) {
 	surface := infrastruct.CreateProxy(r.dispatcher, proxies.NewWlSurface)
 	if err := r.wlCompositor.CreateSurface(surface.GetId()); err != nil {
 		return nil, err
@@ -94,52 +96,38 @@ func (r *Runtime) NewWindow(state *application.WindowState) (application.WindowD
 		return nil, err
 	}
 
-	bufferManager, err := graphics.NewBufferManager(r.newShmPool, r.createBuffer, state.Width, state.Height)
+	return graphics.NewDriver(
+		surface,
+		xdgSurface,
+		xdgToplevel,
+	), nil
+}
+
+func (r *Runtime) NewRenderer(width, height int) (*graphics.Renderer, error) {
+	stride := width * 4
+	size := stride * height
+
+	memory, err := protocol.NewSharedMemory(size)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &graphics.Driver{
-		State:         state,
-		BufferManager: bufferManager,
-		Surface:       surface,
-		XdgSurface:    xdgSurface,
-		XdgToplevel:   xdgToplevel,
-	}, nil
-}
-
-func (r *Runtime) newShmPool(fd, size int) (*proxies.WlShmPool, error) {
-	whShmPool := infrastruct.CreateProxy(r.dispatcher, proxies.NewWlShmPool)
-
-	if err := r.wlShm.CreatePool(whShmPool.GetId(), fd, size); err != nil {
+	wlShmPool := infrastruct.CreateProxy(r.dispatcher, proxies.NewWlShmPool)
+	if err := r.wlShm.CreatePool(wlShmPool.GetId(), memory.Fd, memory.Size); err != nil {
 		return nil, err
 	}
 
-	return whShmPool, nil
-}
-
-func (r *Runtime) createBuffer(d *graphics.Driver) (*graphics.Buffer, error) {
-	wlBuffer := infrastruct.CreateProxy(r.dispatcher, proxies.NewWlBuffer)
-
-	offset := len(d.BufferManager.Buffers) * d.BufferManager.Size
-
-	if err := d.BufferManager.WlShmPool.CreateBuffer(
-		wlBuffer.GetId(),
-		int32(offset),
-		int32(d.State.Width),
-		int32(d.State.Height),
-		int32(d.BufferManager.Stride),
-		0,
-	); err != nil {
-		return nil, err
+	canva := &ui.Canvas{
+		Height: height,
+		Pixels: memory.Pixels,
+		Stride: stride,
+		Width:  width,
 	}
 
-	newBuffer := &graphics.Buffer{
-		WlBuffer: wlBuffer,
-		Offset:   offset,
-		Busy:     false,
-	}
-
-	return newBuffer, nil
+	return graphics.NewRenderer(
+		canva,
+		memory,
+		wlShmPool,
+	), nil
 }

@@ -1,8 +1,13 @@
 package application
 
+type Driver interface {
+	SetTitle(v string) error
+	Show() error
+}
+
 type Window struct {
+	driver Driver
 	state  *WindowState
-	driver WindowDriver
 }
 
 func (w *Window) Show() error {

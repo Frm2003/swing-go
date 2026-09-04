@@ -1,91 +1,37 @@
-package graphics
+package protocol
 
 import (
 	"fmt"
-	"swing-go/backend/wayland/proxies"
 
 	"golang.org/x/sys/unix"
 )
 
-type AllocatorPool func(int, int) (*proxies.WlShmPool, error)
-
-type AllocatorBuffer func(*Driver) (*Buffer, error)
-
-type BufferManager struct {
-	allocBuf AllocatorBuffer
-	Buffers  []*Buffer
-
+type SharedMemory struct {
 	Pixels []byte
 	Fd     int
-
 	Size   int
-	Stride int
-
-	WlShmPool *proxies.WlShmPool
 }
 
-func NewBufferManager(pool AllocatorPool, allocBuf AllocatorBuffer, width, height int) (*BufferManager, error) {
-	stride := width * 4
-	size := stride * height
-
+func NewSharedMemory(size int) (*SharedMemory, error) {
 	fd, err := createFd(size)
-
 	if err != nil {
 		return nil, err
 	}
 
 	data, err := mmap(fd, size)
-
 	if err != nil {
-		defer func() {
-			_ = unix.Close(fd)
-			_ = unix.Munmap(data)
-		}()
+		unix.Close(fd)
 		return nil, err
 	}
 
-	wlShmPool, err := pool(fd, size)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &BufferManager{
-		allocBuf: allocBuf,
-		Buffers:  make([]*Buffer, 0),
-
+	return &SharedMemory{
 		Fd:     fd,
 		Pixels: data,
-
 		Size:   size,
-		Stride: stride,
-
-		WlShmPool: wlShmPool,
 	}, nil
 }
 
-func (bm *BufferManager) CreateBuffer(d *Driver) (*Buffer, error) {
-	buf, err := bm.allocBuf(d)
-
-	if err != nil {
-		return nil, err
-	}
-
-	bm.Buffers = append(bm.Buffers, buf)
-
-	return buf, nil
-}
-
-func (bm *BufferManager) ClearBlack(buffer *Buffer) {
-	start := buffer.Offset
-	end := start + bm.Size
-
-	for i := start; i < end; i++ {
-		bm.Pixels[i] = 0
-	}
-}
-
-func (bm *BufferManager) Close() error {
+func (bm *SharedMemory) Close() error {
 	var firstErr error
 
 	if bm.Pixels != nil {

@@ -1,5 +1,10 @@
 package application
 
+type Runtime interface {
+	Bootstrap() error
+	NewWindow(int, int) (Driver, error)
+}
+
 type App struct {
 	runtime Runtime
 }
@@ -20,7 +25,7 @@ func (a *App) NewWindow(width, height int) *Window {
 		Height: height,
 	}
 
-	driver, err := a.runtime.NewWindow(state)
+	driver, err := a.runtime.NewWindow(width, height)
 
 	if err != nil {
 		panic(err)
