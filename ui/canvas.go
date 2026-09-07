@@ -1,7 +1,22 @@
 package ui
 
+type Widget interface {
+	Draw(*Canvas)
+	Layout(Rect)
+	Measure() Size
+}
+
 type Color struct {
 	R, G, B, A byte
+}
+
+type Rect struct {
+	X, Y, W, H int
+}
+
+type Size struct {
+	Width  int
+	Height int
 }
 
 type Canvas struct {
@@ -20,9 +35,9 @@ func (c *Canvas) Clear(color Color) {
 }
 
 func (c *Canvas) FillRect(x, y, w, h int, color Color) {
-	for py := x; py < y+h; py++ {
+	for py := y; py < y+h; py++ {
 		for px := x; px < x+w; px++ {
-			c.setPixel(x, y, color)
+			c.setPixel(px, py, color)
 		}
 	}
 }
