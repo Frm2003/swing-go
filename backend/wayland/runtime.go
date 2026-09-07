@@ -96,7 +96,14 @@ func (r *Runtime) NewWindow(width, height int) (application.Driver, error) {
 		return nil, err
 	}
 
+	renderer, err := r.NewRenderer(width, height)
+
+	if err != nil {
+		return nil, err
+	}
+
 	return graphics.NewDriver(
+		renderer,
 		surface,
 		xdgSurface,
 		xdgToplevel,
@@ -126,8 +133,26 @@ func (r *Runtime) NewRenderer(width, height int) (*graphics.Renderer, error) {
 	}
 
 	return graphics.NewRenderer(
+		r.NewBuffer,
 		canva,
 		memory,
 		wlShmPool,
 	), nil
+}
+
+func (r *Runtime) NewBuffer(renderer *graphics.Renderer) (*proxies.WlBuffer, error) {
+	wlBuffer := infrastruct.CreateProxy(r.dispatcher, proxies.NewWlBuffer)
+
+	if err := renderer.WlShmPool.CreateBuffer(
+		wlBuffer.GetId(),
+		0,
+		int32(renderer.Width()),
+		int32(renderer.Height()),
+		int32(renderer.Width())*4, // stride
+		renderer.Format(),
+	); err != nil {
+		return nil, err
+	}
+
+	return wlBuffer, nil
 }

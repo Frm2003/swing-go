@@ -2,20 +2,25 @@ package graphics
 
 import (
 	"swing-go/backend/wayland/proxies"
+	"swing-go/ui"
 )
 
 type Driver struct {
+	renderer *Renderer
+
 	surface     *proxies.WlSurface
 	xdgSurface  *proxies.XdgSurface
 	xdgToplevel *proxies.XdgToplevel
 }
 
 func NewDriver(
+	renderer *Renderer,
 	surface *proxies.WlSurface,
 	xdgSurface *proxies.XdgSurface,
 	xdgToplevel *proxies.XdgToplevel,
 ) *Driver {
 	return &Driver{
+		renderer:    renderer,
 		surface:     surface,
 		xdgSurface:  xdgSurface,
 		xdgToplevel: xdgToplevel,
@@ -34,16 +39,22 @@ func (d *Driver) SetTitle(v string) error {
 	return nil
 }
 
-func (d *Driver) Draw() error {
-	// criar buffer
+func (d *Driver) Draw(render func(*ui.Canvas)) error {
+	buffer, err := d.renderer.AcquireBuffer()
 
-	// if err := d.Surface.Attach(buf.WlBuffer.GetId(), 0, 0); err != nil {
-	// 	return err
-	// }
+	if err != nil {
+		return err
+	}
 
-	// if err := d.Surface.Damage(0, 0, d.State.Width, d.State.Height); err != nil {
-	// 	return err
-	// }
+	render(d.renderer.canva)
+
+	if err := d.surface.Attach(buffer.GetId(), 0, 0); err != nil {
+		return err
+	}
+
+	if err := d.surface.Damage(0, 0, d.renderer.Width(), d.renderer.Height()); err != nil {
+		return err
+	}
 
 	return nil
 }
