@@ -30,7 +30,15 @@ func NewXdgWmBase(newId uint32) *XdgWmBase {
 }
 
 func (xdg *XdgWmBase) Handle(message *protocol.Message) {
+	switch message.OpCode {
+	case xdgWmBasePing:
+		xdg.handlePing(message.Payload)
+	}
+}
 
+func (xdg *XdgWmBase) handlePing(payload []byte) {
+	d := protocol.NewDeSerializer(payload)
+	xdg.Pong(d.Uint32())
 }
 
 func (xdg *XdgWmBase) GetId() uint32 {
@@ -52,5 +60,15 @@ func (xdg *XdgWmBase) GetXdgSurface(newId, surfaceId uint32) error {
 		ObjectID: xdg.GetId(),
 		OpCode:   xdgWmBaseGetXdgSurface,
 		Payload:  s.Uint32(newId).Uint32(surfaceId).Bytes(),
+	})
+}
+
+func (xdg *XdgWmBase) Pong(serial uint32) error {
+	s := protocol.NewSerializer()
+
+	return xdg.send(&protocol.Message{
+		ObjectID: xdg.GetId(),
+		OpCode:   xdgWmBasePong,
+		Payload:  s.Uint32(serial).Bytes(),
 	})
 }

@@ -24,6 +24,7 @@ func NewDispatcher() *Dispatcher {
 }
 
 func (d *Dispatcher) dispatch(message *protocol.Message) error {
+	fmt.Println("Recebido: ", message)
 	proxy, ok := d.store.Get(message.ObjectID)
 
 	if !ok {
@@ -36,9 +37,8 @@ func (d *Dispatcher) dispatch(message *protocol.Message) error {
 }
 
 func (d *Dispatcher) Send(message *protocol.Message) error {
-	return call(d.eventLoop, func() error {
-		return d.transport.Send(message)
-	})
+	fmt.Println("Enviado: ", message)
+	return d.transport.Send(message)
 }
 
 func CreateProxy[T Proxy](d *Dispatcher, f Factory[T]) T {
