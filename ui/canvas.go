@@ -2,6 +2,7 @@ package ui
 
 type Widget interface {
 	Draw(*Canvas)
+	GetMargin() Edge
 	Layout(Rect)
 	Measure() Size
 }
@@ -12,6 +13,10 @@ type Color struct {
 
 type Rect struct {
 	X, Y, W, H int
+}
+
+type Edge struct {
+	B, L, R, T int
 }
 
 type Size struct {
