@@ -1,29 +1,5 @@
 package ui
 
-type Widget interface {
-	Draw(*Canvas)
-	GetMargin() Edge
-	Layout(Rect)
-	Measure() Size
-}
-
-type Color struct {
-	R, G, B, A byte
-}
-
-type Rect struct {
-	X, Y, W, H int
-}
-
-type Edge struct {
-	B, L, R, T int
-}
-
-type Size struct {
-	Width  int
-	Height int
-}
-
 type Canvas struct {
 	Height int
 	Pixels []byte
