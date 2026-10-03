@@ -1,10 +1,5 @@
 package application
 
-type Runtime interface {
-	Bootstrap() error
-	NewWindow(int, int) (Driver, error)
-}
-
 type App struct {
 	runtime Runtime
 }
