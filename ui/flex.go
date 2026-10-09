@@ -21,11 +21,11 @@ func crossAxis(d Direction, s Size) int {
 	return s.Width
 }
 
-func axisDelta(d Direction, delta int) (dx, dy int) {
+func axisDelta(d Direction, s Size) (dx, dy int) {
 	if d == Row {
-		return delta, 0
+		return s.Width, 0
 	}
-	return 0, delta
+	return 0, s.Height
 }
 
 func measure(d Direction, current, child Size) Size {

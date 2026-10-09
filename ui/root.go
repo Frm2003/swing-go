@@ -16,21 +16,18 @@ func (r *Root) Draw(c *Canvas) {
 		return
 	}
 
-	r.Child.Draw(c)
+	margin := r.Child.GetMargin()
+
+	r.Child.Draw(c, Point{margin.L, margin.T})
 }
 
-func (r *Root) Layout() {
+func (r *Root) Layout(width, height int) {
 	if r.Child == nil {
 		return
 	}
 
-	size := r.Child.Measure()
-	margin := r.Child.GetMargin()
-
-	r.Child.Layout(Rect{
-		X: margin.L,
-		Y: margin.T,
-		W: size.Width,
-		H: size.Height,
+	r.Child.Layout(Constraint{
+		MaxH: width,
+		MaxW: height,
 	})
 }

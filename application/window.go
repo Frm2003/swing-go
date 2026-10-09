@@ -12,7 +12,7 @@ func (w *Window) Close() {
 }
 
 func (w *Window) Draw(root *ui.Root) error {
-	root.Layout()
+	root.Layout(w.state.Width, w.state.Height)
 	return w.driver.Draw(root.Draw)
 }
 

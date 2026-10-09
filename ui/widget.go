@@ -4,8 +4,7 @@ package ui
 // quanto ele mede (Measure), decide um espaço, manda se posicionar nele
 // (Layout) e pede pra se desenhar (Draw).
 type Widget interface {
-	Draw(*Canvas)
+	Draw(*Canvas, Point)
 	GetMargin() Edge
-	Layout(Rect)
-	Measure() Size
+	Layout(Constraint) Size
 }
