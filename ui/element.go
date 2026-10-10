@@ -26,7 +26,12 @@ func (e *Element) Draw(c *Canvas, origin Point) {
 	}
 
 	for index, child := range e.Children {
-		child.Draw(c, e.offsets[index])
+		offset := e.offsets[index]
+
+		x := offset.X + origin.X
+		y := offset.Y + origin.Y
+
+		child.Draw(c, Point{x, y})
 	}
 }
 
